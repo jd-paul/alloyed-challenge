@@ -1,224 +1,208 @@
 package com.project.paul.maven;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.project.paul.maven.AlloyOptimisation.Alloy;
 import com.project.paul.maven.AlloyOptimisation.Chromium;
+import com.project.paul.maven.AlloyOptimisation.Cobalt;
+import com.project.paul.maven.AlloyOptimisation.Molybdenum;
+import com.project.paul.maven.AlloyOptimisation.Nickel;
+import com.project.paul.maven.AlloyOptimisation.Niobium;
 
 /**
- * AlloyOptimisation is an abstract class representing different machine types.
- * 
- * Creep resistance of an alloy = Summation of all materials
- * (Creep coefficient * atomic percentages)
- * Cost of an alloy = Summation of all materials
- * (Cost per kg * atomic percentages) / 100
+ * AlloyOptimisation is the main container for all elements, alloys, and
+ * computation logic.
+ * - It contains an element interface and various alloy element classes (Cr, Co, Nb, Mo, Ni).
+ * - It has an Alloy class that represents a composition with atomic percentages.
+ * - AlloyComputer (inside this class) finds the best alloy configuration based on constraints.
  */
 
 public class AlloyOptimisation {
 
+    public static void main(String[] args) {
+        System.out.println("\n--- Testing of Table 3 ---\n");
+
+        AlloyOptimisation optimisation = new AlloyOptimisation();
+
+        AlloyOptimisation.Element chromium = optimisation.new Chromium();
+        AlloyOptimisation.Element cobalt = optimisation.new Cobalt();
+        AlloyOptimisation.Element niobium = optimisation.new Niobium();
+        AlloyOptimisation.Element molybdenum = optimisation.new Molybdenum();
+        AlloyOptimisation.Element nickel = optimisation.new Nickel(); // Base element (balance)
+
+        // **Manual Testing - Table 3 Fixed Compositions**
+
+        // Test Case 1: Expected Creep: 1.226E18
+        Alloy alloy1 = new AlloyOptimisation().new Alloy();
+        alloy1.addElement(chromium, 15.0);
+        alloy1.addElement(cobalt, 10.0);
+        alloy1.addElement(niobium, 1.0);
+        alloy1.addElement(molybdenum, 2.0);
+        alloy1.addElement(nickel, 100.0 - (15.0 + 10.0 + 1.0 + 2.0));
+
+        double calculatedCreep1 = alloy1.getCreepResistance();
+        System.out.printf("First alloy - Creep Resistance: %.3E (Expected: 1.226E18)\n", calculatedCreep1);
+
+        // Test Case 2: Expected Creep: 5.519E17
+        Alloy alloy2 = new AlloyOptimisation().new Alloy();
+        alloy2.addElement(chromium, 20.0);
+        alloy2.addElement(cobalt, 0.0);
+        alloy2.addElement(niobium, 0.0);
+        alloy2.addElement(molybdenum, 1.5);
+        alloy2.addElement(nickel, 100.0 - (20.0 + 0.0 + 0.0 + 1.5));
+
+        double calculatedCreep2 = alloy2.getCreepResistance();
+        System.out.printf("Second alloy - Creep Resistance: %.3E (Expected: 5.519E17)\n", calculatedCreep2);
+
+        // Test Case 3: Expected Creep: 2.820E18
+        Alloy alloy3 = new AlloyOptimisation().new Alloy();
+        alloy3.addElement(chromium, 22.0);
+        alloy3.addElement(cobalt, 25.0);
+        alloy3.addElement(niobium, 1.5);
+        alloy3.addElement(molybdenum, 6.0);
+        alloy3.addElement(nickel, 100.0 - (22.0 + 25.0 + 1.5 + 6.0));
+
+        double calculatedCreep3 = alloy3.getCreepResistance();
+        System.out.printf("Third alloy -> Creep Resistance: %.3E (Expected: 2.820E18)\n", calculatedCreep3);
+    }
+
     // --- Alloy Data Structure ---
     public interface Element {
-        double getCreepCoefficient(); // alpha_i
-
-        double getCostPerKg(); // c_i
-
+        double getCreepCoefficient();
+        double getCostPerKg();
+        double getMinAtPercent();
+        double getMaxAtPercent();
+        double getStepSize();
         String getName();
     }
 
     // --- Alloy Types ---
     public class Chromium implements Element {
-        @Override
-        public double getCreepCoefficient() {
-            return 2.0911350E+16;
-        }
-
-        @Override
-        public double getCostPerKg() {
-            return 14.0;
-        }
-
-        @Override
-        public String getName() {
-            return "Cr";
-        }
+        @Override public double getCreepCoefficient() { return 2.0911350E+16; }
+        @Override public double getCostPerKg() { return 14.0; }
+        @Override public double getMinAtPercent() { return 14.5; }
+        @Override public double getMaxAtPercent() { return 22.0; }
+        @Override public double getStepSize() { return 0.5; }
+        @Override public String getName() { return "Cr"; }
     }
 
     public class Cobalt implements Element {
-        @Override
-        public double getCreepCoefficient() {
-            return 7.2380280E+16;
-        }
-
-        @Override
-        public double getCostPerKg() {
-            return 80.5;
-        }
-
-        @Override
-        public String getName() {
-            return "Co";
-        }
+        @Override public double getCreepCoefficient() { return 7.2380280E+16; }
+        @Override public double getCostPerKg() { return 80.5; }
+        @Override public double getMinAtPercent() { return 0.0; }
+        @Override public double getMaxAtPercent() { return 25.0; }
+        @Override public double getStepSize() { return 1.0; }
+        @Override public String getName() { return "Co"; }
     }
 
     public class Niobium implements Element {
-        @Override
-        public double getCreepCoefficient() {
-            return 1.0352738E+16;
-        }
-
-        @Override
-        public double getCostPerKg() {
-            return 42.5;
-        }
-
-        @Override
-        public String getName() {
-            return "Nb";
-        }
+        @Override public double getCreepCoefficient() { return 1.0352738E+16; }
+        @Override public double getCostPerKg() { return 42.5; }
+        @Override public double getMinAtPercent() { return 0.0; }
+        @Override public double getMaxAtPercent() { return 1.5; }
+        @Override public double getStepSize() { return 0.1; }
+        @Override public String getName() { return "Nb"; }
     }
 
     public class Molybdenum implements Element {
-        @Override
-        public double getCreepCoefficient() {
-            return 8.9124547E+16;
-        }
-
-        @Override
-        public double getCostPerKg() {
-            return 16.0;
-        }
-
-        @Override
-        public String getName() {
-            return "Mo";
-        }
+        @Override public double getCreepCoefficient() { return 8.9124547E+16; }
+        @Override public double getCostPerKg() { return 16.0; }
+        @Override public double getMinAtPercent() { return 1.5; }
+        @Override public double getMaxAtPercent() { return 6.0; }
+        @Override public double getStepSize() { return 0.5; }
+        @Override public String getName() { return "Mo"; }
     }
 
-    // Nickel is unique since it doesn't contribute to creep resistance
     public class Nickel implements Element {
-        @Override
-        public double getCreepCoefficient() {
-            return 0.0; // Nickel does not contribute to creep resistance
-        }
-
-        @Override
-        public double getCostPerKg() {
-            return 8.9;
-        }
-
-        @Override
-        public String getName() {
-            return "Ni";
-        }
+        @Override public double getCreepCoefficient() { return 0.0; }
+        @Override public double getCostPerKg() { return 8.9; }
+        @Override public double getMinAtPercent() { return 0.0; }
+        @Override public double getMaxAtPercent() { return 100.0; }
+        @Override public double getStepSize() { return 0.0; }
+        @Override public String getName() { return "Ni"; }
     }
 
-    /**
-     * Alloy is a class representing a metal alloy.
-     * It contains a map of elements and their atomic percentages.
-     * It can calculate the creep resistance and cost of the alloy.
-     */
+    // --- Alloy Representation ---
     public class Alloy {
-        // Map element -> atomic percent, or a small container class
-        private Map<Element, Double> composition = new HashMap<>();
+        private final List<Element> elements = new ArrayList<>();
+        private final List<Double> percentages = new ArrayList<>();
 
         public void addElement(Element element, double percent) {
-            composition.put(element, percent);
+            elements.add(element);
+            percentages.add(percent);
         }
 
         public double getCreepResistance() {
             double total = 0.0;
-            for (Map.Entry<Element, Double> entry : composition.entrySet()) {
-                Element e = entry.getKey();
-                double x = entry.getValue(); // atomic percent
-                // Nickel’s coefficient is 0 anyway, so no harm in adding
-                total += e.getCreepCoefficient() * x;
+            for (int i = 0; i < elements.size(); i++) {
+                total += elements.get(i).getCreepCoefficient() * percentages.get(i);
             }
             return total;
         }
 
         public double getCost() {
             double total = 0.0;
-            for (Map.Entry<Element, Double> entry : composition.entrySet()) {
-                Element e = entry.getKey();
-                double x = entry.getValue();
-                total += (e.getCostPerKg() * x) / 100.0;
+            for (int i = 0; i < elements.size(); i++) {
+                total += (elements.get(i).getCostPerKg() * percentages.get(i)) / 100.0;
             }
             return total;
         }
+
+        public String getCompositionSummary() {
+            StringBuilder sb = new StringBuilder("Alloy Composition: ");
+            for (int i = 0; i < elements.size(); i++) {
+                sb.append(String.format("%s: %.1f%%, ", elements.get(i).getName(), percentages.get(i)));
+            }
+            return sb.substring(0, sb.length() - 2);
+        }
     }
 
-    /**
-     * AlloyComputer is a class that will compute through each step passed in. It
-     * will perform a brute-force search to find the alloy with the highest creep
-     * resistance while avoiding the cost going over £18/kg.
-     */
+    // --- Alloy Computation ---
     public class AlloyComputer {
+        private double bestResistance = 0.0;
+        private Alloy bestAlloy = null;
 
-        public Alloy findBestAlloy(double stepCr, double stepCo, double stepNb, double stepMo) {
-            Alloy bestAlloy = null;
-            double bestResistance = 0.0;
-
-            for (double cr = 14.5; cr <= 22.0; cr += stepCr) {
-                for (double co = 0.0; co <= 25.0; co += stepCo) {
-                    for (double nb = 0.0; nb <= 1.5; nb += stepNb) {
-                        for (double mo = 1.5; mo <= 6.0; mo += stepMo) {
-                            double sum = cr + co + nb + mo;
-                            if (sum <= 100.0) {
-                                double ni = 100.0 - sum;
-
-                                Alloy candidate = new Alloy();
-                                candidate.addElement(new Chromium(), cr);
-                                candidate.addElement(new Cobalt(), co);
-                                candidate.addElement(new Niobium(), nb);
-                                candidate.addElement(new Molybdenum(), mo);
-                                candidate.addElement(new Nickel(), ni);
-
-                                double cost = candidate.getCost();
-                                double creep = candidate.getCreepResistance();
-
-                                if (cost <= 18.0 && creep > bestResistance) {
-                                    bestResistance = creep;
-                                    bestAlloy = candidate;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        public Alloy findBestAlloy(List<Element> elements, Element baseElement, double maxCost) {
+            elements.remove(baseElement); // Remove base element from iteration
+            double[] percentages = new double[elements.size()];
+            computeBestAlloy(elements, baseElement, percentages, 0, 0.0, maxCost);
             return bestAlloy;
         }
 
-        public List<Alloy> computeAllAlloys(double stepCr, double stepCo, double stepNb, double stepMo) {
-            List<Alloy> alloys = new ArrayList<>();
+        private void computeBestAlloy(List<Element> elements, Element baseElement,
+                                      double[] percentages, int index, double sum, double maxCost) {
+            if (index == elements.size()) {
+                double basePercentage = 100.0 - sum;
+                if (basePercentage < 0) return;
 
-            for (double cr = 14.5; cr <= 22.0; cr += stepCr) {
-                for (double co = 0.0; co <= 25.0; co += stepCo) {
-                    for (double nb = 0.0; nb <= 1.5; nb += stepNb) {
-                        for (double mo = 1.5; mo <= 6.0; mo += stepMo) {
-                            double sum = cr + co + nb + mo;
-                            if (sum <= 100.0) {
-                                double ni = 100.0 - sum;
-
-                                Alloy candidate = new Alloy();
-                                candidate.addElement(new Chromium(), cr);
-                                candidate.addElement(new Cobalt(), co);
-                                candidate.addElement(new Niobium(), nb);
-                                candidate.addElement(new Molybdenum(), mo);
-                                candidate.addElement(new Nickel(), ni);
-
-                                if (candidate.getCost() <= 18.0) {
-                                    alloys.add(candidate);
-                                }
-                            }
-                        }
-                    }
+                Alloy candidate = new Alloy();
+                for (int i = 0; i < elements.size(); i++) {
+                    candidate.addElement(elements.get(i), percentages[i]);
                 }
+                candidate.addElement(baseElement, basePercentage);
+
+                double cost = candidate.getCost();
+                double creep = candidate.getCreepResistance();
+
+                if (cost <= maxCost) {
+                    System.out.printf("🔍 Candidate Alloy -> %s | Creep: %.3E | Cost: £%.2f\n",
+                            candidate.getCompositionSummary(), creep, cost);
+                }
+
+                if (cost <= maxCost && creep > bestResistance) {
+                    bestResistance = creep;
+                    bestAlloy = candidate;
+                }
+                return;
             }
-            return alloys;
+
+            Element element = elements.get(index);
+            for (double p = element.getMinAtPercent(); p <= element.getMaxAtPercent(); p += element.getStepSize()) {
+                if (sum + p > 100.0) break;
+                percentages[index] = p;
+                computeBestAlloy(elements, baseElement, percentages, index + 1, sum + p, maxCost);
+            }
         }
     }
-
 }

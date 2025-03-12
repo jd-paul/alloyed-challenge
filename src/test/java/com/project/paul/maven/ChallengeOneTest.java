@@ -3,12 +3,16 @@ package com.project.paul.maven;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
+/**
+ * ChallengeOneTest - Unit test for AmMachine
+ * - Ensures that the price is correctly calculated through decorators.
+ */
+
 public class ChallengeOneTest {
 
     @Test
     public void testMachineDescription() {
-
-        System.out.println("Challenge one test\n");
+        System.out.println("\n--- Challenge one test - Obtain price using decoraters =====\n");
 
         AmMachine machine = new AmMachine.MediumPowerMachine();
         machine = new AmMachine.ReducedBuildVolume(machine);
